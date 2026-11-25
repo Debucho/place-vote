@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// ログインなし・URLを知っている人が読み書きできる方式。
+// イベントIDは推測困難なランダム16文字なので、IDを知らない人はアクセスできない。
+// 「全イベント一覧の取得」はできないようにしている。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function str(v, max) { return v is string && v.size() <= max; }
+
+    match /events/{eventId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if eventId.size() >= 16
+        && request.resource.data.keys().hasOnly(['title', 'createdAt'])
+        && str(request.resource.data.title, 60) && request.resource.data.title.size() > 0;
+      allow update, delete: if false;
+
+      match /places/{placeId} {
+        allow read: if exists(/databases/$(database)/documents/events/$(eventId));
+        allow create: if exists(/databases/$(database)/documents/events/$(eventId))
+          && request.resource.data.keys().hasOnly(['name', 'url', 'memo', 'addedBy', 'createdAt', 'comments'])
+          && str(request.resource.data.name, 80) && request.resource.data.name.size() > 0
+          && str(request.resource.data.url, 500)
+          && str(request.resource.data.memo, 1000)
+          && str(request.resource.data.addedBy, 20)
+          && request.resource.data.comments.size() == 0;
+        // 更新はコメント追加のみ許可
+        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comments'])
+          && request.resource.data.comments.size() <= 200;
+        allow delete: if true;
+      }
+
+      match /votes/{voter} {
+        allow read: if exists(/databases/$(database)/documents/events/$(eventId));
+        allow create, update: if voter.size() <= 20
+          && exists(/databases/$(database)/documents/events/$(eventId)/places/$(request.resource.data.placeId))
+          && request.resource.data.keys().hasOnly(['placeId', 'at']);
+        allow delete: if true;
+      }
+    }
+  }
+}
