@@ -17,6 +17,8 @@ URLを共有するだけで、みんなで「行きたいところ」を出し�
 | `store.js` | データ保存（Firestore 版／お試し版） |
 | `firebase-config.js` | Firebase の接続設定 |
 | `firestore.rules` | Firestore のセキュリティルール |
+| `affiliate-config.js` | アフィリエイトリンクの設定 |
+| `privacy.html` | プライバシーポリシー |
 
 ### データ構造（Firestore）
 
@@ -52,6 +54,16 @@ python3 -m http.server 8000   # このフォルダで実行し、http://localhos
 
 リポジトリの Settings → Pages → Source を「Deploy from a branch」、Branch を `main` / `/ (root)` にする。
 数分で `https://<ユーザー名>.github.io/<リポジトリ名>/` で公開される。
+
+## アフィリエイト（もしもアフィリエイト）
+
+カードを開くと「🏨 周辺の宿を探す（楽天トラベル）PR」のリンクが出る。
+
+1. もしもアフィリエイトで楽天トラベルなどのプロモーションと提携する
+2. 「広告リンク」画面でテキストリンクを1本作る（リンク先は何でもよい）
+3. 生成された `https://af.moshimo.com/af/c/click?...&url=...` のURLを `affiliate-config.js` の `sampleLink` に貼る
+
+アプリはこのURLの `url=` だけを、候補地の名前で検索するページに差し替える。`sampleLink` が空なら表示しない。
 
 ## 注意
 

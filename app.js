@@ -1,4 +1,5 @@
 import { createStore } from "./store.js";
+import { affiliateLinks } from "./affiliate-config.js";
 
 const $app = document.getElementById("app");
 const params = new URLSearchParams(location.search);
@@ -27,6 +28,26 @@ function normalizeUrl(raw) {
   return s;
 }
 const isSafeUrl = (u) => /^https?:\/\//i.test(u);
+
+// もしもアフィリエイトのサンプルリンクの url= だけを、候補地の検索ページに差し替える
+function affiliateHref(entry, placeName) {
+  try {
+    const link = new URL(entry.sampleLink);
+    link.searchParams.set("url", entry.targetUrl.replace("{q}", encodeURIComponent(placeName)));
+    return link.href;
+  } catch {
+    return null;
+  }
+}
+
+function renderAffiliate(placeName) {
+  const items = affiliateLinks
+    .filter((a) => a.sampleLink)
+    .map((a) => [a, affiliateHref(a, placeName)])
+    .filter(([, href]) => href)
+    .map(([a, href]) => `<a class="aff-link" href="${esc(href)}" target="_blank" rel="sponsored noopener">${esc(a.label)}<span class="pr">PR</span></a>`);
+  return items.length ? `<div class="aff">${items.join("")}</div>` : "";
+}
 
 function toast(msg) {
   const t = document.getElementById("toast");
@@ -209,6 +230,7 @@ function renderCard(p, i, myVote) {
               ${p.url ? `<p class="url">🔗 ${isSafeUrl(p.url) ? `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.url)}</a>` : esc(p.url)}</p>` : ""}
               ${p.memo ? `<p class="memo">📝 ${esc(p.memo)}</p>` : ""}
               <p class="added muted">追加：${esc(p.addedBy || "?")}${comments.length ? `　💬 ${comments.length}` : ""}</p>
+              ${renderAffiliate(p.name)}
               <ul class="comments">
                 ${comments.map((c) => `<li><b>${esc(c.by)}</b>${esc(c.text)}</li>`).join("")}
               </ul>
